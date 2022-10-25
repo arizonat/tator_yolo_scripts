@@ -5,7 +5,7 @@
 #SBATCH --mem-per-cpu=2GB
 #SBATCH --time=6:00:00
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=sbatchelder@whoi.edu
+#SBATCH --mail-user=hsosik@whoi.edu
 #SBATCH --partition=compute
 #SBATCH --output=slogs/video2tator/%j.%x.txt
 
