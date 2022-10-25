@@ -1,0 +1,5 @@
+__pycache__
+demodata
+!.gitignore
+venv
+tator_token.txt
