@@ -1,0 +1,35 @@
+
+
+# ADDING A NEW CLASS #
+
+https://tator.whoi.edu/rest/
+
+PATCH /rest/AttributeType/{ID
+
+      id = 1  for isiis ROI
+      
+BODY:
+
+{
+  "entity_type": "LocalizationType",
+  "global": "true",
+  "old_attribute_type_name": "Class",
+  "new_attribute_type": {
+    "name": "Class",
+    "dtype": "enum",
+    "labels": [
+        "prev_label_1",
+        "prev_label_2",
+        "NEW_LABEL_1",
+        "NEW_LABEL_2"
+      ],
+      "choices": [
+        "prev_label_1",
+        "prev_label_2",
+        "NEW_LABEL_1",
+        "NEW_LABEL_2"
+      ]
+  }
+}
+
+

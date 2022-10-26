@@ -8,7 +8,7 @@
 #SBATCH --mail-user=hsosik@whoi.edu
 #SBATCH --partition=compute
 #SBATCH --array=
-#SBATCH --output=slog/tiff2video/%A.%a.%x.txt
+#SBATCH --output=slogs/tiff2video/%A.%a.%x.txt
 
 # LOGGING JOB DETAILS #
 echo "Job ID: $SLURM_JOB_ID, JobName: $SLURM_JOB_NAME"
@@ -34,7 +34,7 @@ DST=tiff2video_output
 # Get target dir to from list and slurm-array-index to convert to video
 VIDEOS_LIST=$1
 VIDEO_DIR=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $VIDEOS_LIST)
-VIDEO=$(basename VIDEO_DIR)
+VIDEO=$(basename $VIDEO_DIR)
 
 # Get filename format of the directory
 FILEFMT=$(ls -p "$VIDEO_DIR" | grep -v / | head -n1)

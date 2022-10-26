@@ -7,7 +7,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=hsosik@whoi.edu
 #SBATCH --partition=compute
-#SBATCH --output=slurm/tiffcheck/%j.%x.txt
+#SBATCH --output=slogs/tiffcheck/%j.%x.txt
 
 # LOGGING JOB DETAILS #
 echo "Job ID: $SLURM_JOB_ID, JobName: $SLURM_JOB_NAME"

@@ -5,10 +5,10 @@
 #SBATCH --mem-per-cpu=2GB
 #SBATCH --time=6:00:00
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=hsosik@whoi.edu
+#SBATCH --mail-user=sbatchelder@whoi.edu
 #SBATCH --partition=compute
 #SBATCH --array=
-#SBATCH --output=slog/tiffcheck/%A.%a.%x.txt
+#SBATCH --output=slogs/tiffcheck/%A.%a.%x.txt
 
 # LOGGING JOB DETAILS #
 echo "Job ID: $SLURM_JOB_ID, JobName: $SLURM_JOB_NAME"
@@ -17,7 +17,7 @@ hostname; pwd; date
 VIDEO_DIR=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $1)
 VIDEO=$(basename "$VIDEO_DIR")
 
-FILEFMT=$(ls "$SRC/$VIDEO/" | head -n1)
+FILEFMT=$(ls "$VIDEO_DIR/" | head -n1)
 FILEFMT=${FILEFMT%_*}
 
 echo "$VIDEO_DIR/${FILEFMT}_%d.tiff"

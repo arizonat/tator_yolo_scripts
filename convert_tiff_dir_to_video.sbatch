@@ -7,7 +7,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=hsosik@whoi.edu
 #SBATCH --partition=compute
-#SBATCH --output=slog/tiff2video/%j.%x.txt
+#SBATCH --output=slogs/tiff2video/%j.%x.txt
 
 # LOGGING JOB DETAILS #
 echo "Job ID: $SLURM_JOB_ID, JobName: $SLURM_JOB_NAME"
@@ -31,7 +31,7 @@ DST=tiff2video_output
 
 # Video directory is first argument
 VIDEO_DIR=$1
-VIDEO=$(basename VIDEO_DIR)
+VIDEO=$(basename $VIDEO_DIR)
 
 # Get filename format of the directory
 FILEFMT=$(ls -p "$VIDEO_DIR" | grep -v / | head -n1)
