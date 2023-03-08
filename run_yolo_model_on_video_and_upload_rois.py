@@ -4,6 +4,7 @@ import argparse
 import os
 from pprint import pprint
 from tqdm import tqdm
+from pathlib import Path
 
 import tator
 
@@ -15,7 +16,7 @@ class hashabledict(dict):
 def get_args():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('MEDIA', help='the data/viideo you want to process')
+    parser.add_argument('MEDIA', help='the data/video you want to process')
     parser.add_argument('MODEL', help='the yolo model (weights) to apply to MEDIA')
     
     tator_args = parser.add_argument_group(title='Tator Parameters', description=None)
@@ -91,6 +92,7 @@ def tator_args_str2id(args, api):
     #media_type = api.get_media_type(args.media_type)
     localization_type = api.get_localization_type(args.localization_type)
     args.roi_classes = [attrib.choices for attrib in localization_type.attribute_types if attrib.name==args.class_attribute][0]
+    args.roi_classes_type = [attrib.dtype for attrib in localization_type.attribute_types if attrib.name==args.class_attribute][0]
     
     # 3) if MEDIA exists on tator, note media ID
     if args.media_id:
@@ -98,7 +100,7 @@ def tator_args_str2id(args, api):
         MEDIA_name = os.path.splitext(media_obj.name)[0]
     else:
         MEDIA_name = os.path.splitext(os.path.basename(args.MEDIA))[0]
-        media_obj = api.get_media_list(args.project, name=MEDIA_name+'.mp4')
+        media_obj = api.get_media_list(args.project, name=Path(args.MEDIA).name)
         assert len(media_obj) != 0, f'MEDIA name "{MEDIA_name}" was not found in project {project_name} ({args.project}). Has it been uploaded yet?'
         assert len(media_obj) == 1, f'MEDIA name "{MEDIA_name}" has duplicates in project {project_name} ({args.project}). Select one from these IDs using --media_id: {",".join([str(d.id) for d in media_obj])}'
         media_obj = media_obj[0]
@@ -152,7 +154,7 @@ def format_preds(preds, args):
                 args.class_attribute: model_class,  # 'Class'
                 })
         if frame <= 0 and args.skip_title_frame: continue
-        elif model_class not in args.roi_classes: 
+        elif not args.roi_classes_type == "string" and model_class not in args.roi_classes: 
             spec_invalid.append(d)
             continue
 

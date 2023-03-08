@@ -30,6 +30,8 @@ set -eu
 
 TOKEN=$(cat tator_token.txt)  # hpc-user access token
 
-time python3 run_yolo_model_on_video_and_upload_rois.py "$@" --device=0 --token $TOKEN
-
+VIDEOSFILE=$1
+while read f; do
+    time python3 run_yolo_model_on_video_and_upload_rois.py "$f" "${@:2}" --device=0 --token $TOKEN
+done <$VIDEOSFILE
 
