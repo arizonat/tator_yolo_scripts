@@ -14,28 +14,29 @@ class hashabledict(dict):
         return hash(tuple(sorted(self.items())))
 
 def get_args():
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument('MEDIA', help='the data/video you want to process')
     parser.add_argument('MODEL', help='the yolo model (weights) to apply to MEDIA')
-    
+
     tator_args = parser.add_argument_group(title='Tator Parameters', description=None)
     tator_args.add_argument('--host', default='https://tator.whoi.edu', help='Default is "https://tator.whoi.edu"')
     tator_args.add_argument('--token', required=True, help='Tator user-access token (required)')
-    tator_args.add_argument('--project', default='1', help='Default is "1" for the ISIIS project')  # isiis
+    tator_args.add_argument('--project', default='2', help='Default is "2" for the WARP fish detection project')
     #tator_args.add_argument('--media_type', default='1')  # shadowgraph video
-    tator_args.add_argument('--localization_type', default='1', help='Default is "1" for Shadowgraph ROI localization_type id')  # ROI
-    
+    tator_args.add_argument('--version_id', default='2', help='')  # which layer.
+    tator_args.add_argument('--localization_type', default='2', help='Default is "2" for Animal BBox localization_type id')  # ROI
+
     tator_args.add_argument('--class-attribute', default='Class', help='Default is the localization_type "Class" attribute)')
-    tator_args.add_argument('--media_id', type=int, help='[optional] tator media id reference')
-    
+    tator_args.add_argument('--media_id', required=True, type=int, help='2 = CUREE videos, 3 = Diver Survey, 4 = Diver Images')
+
     tator_args.add_argument('--frame-offset', type=int, default=0, help='Frame number offset. Eg: -1. Default is 0')
     tator_args.add_argument('--skip-title-frame', action='store_true', help='If invoked, the first frame of the video will be skipped')
-    
+
     # from yolov5_ultralytics/detect.py
     model_args = parser.add_argument_group(title='Model Parameters', description=None)
     model_args.add_argument('--classlist', dest='model_classlist', required=True, help='A file with the ordered list of class names, newlines deliminated')
-    model_args.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w') 
+    model_args.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     model_args.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     model_args.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     model_args.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
@@ -45,7 +46,7 @@ def get_args():
 
     args = parser.parse_args()
     args.imgsz *= 2 if len(args.imgsz) == 1 else 1  # expand
-    
+
     model_classlist = []
     with open(args.model_classlist) as f:
         for l in f:
@@ -55,10 +56,10 @@ def get_args():
     args.model_classlist = model_classlist
     return args
 
-    
+
 def tator_args_str2id(args, api):
     # 1) convert any strings to IDs by looking them up on tator for project, media_type, and localization_type
-    
+
     # PROJECT
     projects_avail = {d.name:d.id for d in api.get_project_list()}
     pprint(projects_avail)
@@ -68,7 +69,7 @@ def tator_args_str2id(args, api):
         assert args.project in projects_avail, f'Project Type "{args.project}" not in: {", ".join(projects_avail)}'
         args.project = projects_avail[args.project]
     project_name = {v:k for k,v in projects_avail.items()}[args.project]
-    
+
     # MEDIA TYPE
     #mediatypes_avail = {d.name:d.id for d in api.get_media_type_list(args.project)}
     #pprint(mediatypes_avail)
@@ -77,7 +78,7 @@ def tator_args_str2id(args, api):
     #else:
     #    assert args.media_type in mediatypes_avail, f'Media Type "{args.media_type}" not in: {", ".join(mediatypes_avail)}'
     #    args.media_type = mediatypes_avail[args.media_type]
-        
+
     # LOCALIZATION TYPE
     localizationtypes_avail = {d.name:d.id for d in api.get_localization_type_list(args.project)}
     pprint(localizationtypes_avail)
@@ -86,14 +87,14 @@ def tator_args_str2id(args, api):
     else:
         assert args.localization_type in localizationtypes_avail, f'Localization Type "{args.localization_type}" not in: {", ".join(localizationtypes_avail)}'
         args.localization_type = localizationtypes_avail[args.localization_type]
-            
+
     # 2) check that all do infact exist
     project = api.get_project(args.project)
     #media_type = api.get_media_type(args.media_type)
     localization_type = api.get_localization_type(args.localization_type)
     args.roi_classes = [attrib.choices for attrib in localization_type.attribute_types if attrib.name==args.class_attribute][0]
     args.roi_classes_type = [attrib.dtype for attrib in localization_type.attribute_types if attrib.name==args.class_attribute][0]
-    
+
     # 3) if MEDIA exists on tator, note media ID
     if args.media_id:
         media_obj = api.get_media(id=args.media_id)
@@ -106,12 +107,12 @@ def tator_args_str2id(args, api):
         media_obj = media_obj[0]
         #pprint(media_obj)
     args.media_id = media_obj.id
-    
+
     # 4) check that MEDIA is a real/accessible path. if not, check tator media for src file path.
     assert os.path.exists(args.MEDIA), f'MEDIA "{args.MEDIA}" is not a valid file.'
     print('MEDIA_ID:',args.media_id)
     # TODO check media_obj for a source attribute to go looking up the correct piece of backend/original media
-    
+
     return args
 
 
@@ -122,12 +123,12 @@ def run_model(args):
                        device=args.device, imgsz=args.imgsz, half=args.half,
                        conf_thres=args.conf_thres, iou_thres=args.iou_thres,
                        max_det=args.max_det, agnostic_nms=args.agnostic_nms, nosave=True)
-                       
+
     return preds
 
 
 def format_preds(preds, args):
-    
+
     spec_list = []
     classes = set()
     spec_invalid = []
@@ -143,6 +144,7 @@ def format_preds(preds, args):
         d = hashabledict({
                 'media_id': args.media_id,
                 'type':     args.localization_type,
+                'version':  args.version_id,
                 'frame':    frame,
                 'x':        x,
                 'y':        y,
@@ -150,21 +152,21 @@ def format_preds(preds, args):
                 'height':   h,
                 'Verified': False,
                 'ModelScore': float(score),
-                'ModelName':  args.MODEL, 
+                'ModelName':  args.MODEL,
                 args.class_attribute: model_class,  # 'Class'
                 })
         if frame <= 0 and args.skip_title_frame: continue
-        elif not args.roi_classes_type == "string" and model_class not in args.roi_classes: 
+        elif not args.roi_classes_type == "string" and model_class not in args.roi_classes:
             spec_invalid.append(d)
             continue
 
-        spec_list.append(d) 
-    
+        spec_list.append(d)
+
     classes = sorted(classes)
     print('Model Classes Found')
     for c in classes:
         print(f'  {c}')
-    
+
     print()
     if spec_invalid:
         print('ERROR: the following model_classes are not valid ROI classes. {len(spec_invalid)} ROIs were skipped')
@@ -177,8 +179,8 @@ def format_preds(preds, args):
 
     # check / eliminate duplicates
     print(f'{len(spec_list)} vs. set({len(set(spec_list))})')
-    
-    spec_list = sorted(set(spec_list), key=lambda d:(d['media_id'],d['frame'],d['x'],d['y']))    
+
+    spec_list = sorted(set(spec_list), key=lambda d:(d['media_id'],d['frame'],d['x'],d['y']))
     return spec_list
 
 
@@ -199,27 +201,27 @@ if __name__ == '__main__':
     # 0) inputs: model, video, tator_configs
     args = get_args()
     api = tator.get_api(args.host, args.token)
-    
+
     # 1) check video exists on tator. If not, then upload?
     args = tator_args_str2id(args, api)
     if not args.media_id:
         raise NotImplemented('video not found on tator. upload it first')
-    
+
     # 2) run model on video, output bboxes
     preds = run_model(args)
-    
-    # 3) format preds for tator 
+
+    # 3) format preds for tator
     roi_specs = format_preds(preds, args)
     #pprint(roi_specs)
-    
+
     # 4) bulk upload detections to tator, w/ new version number
     roi_ids = upload_ROIs(roi_specs, api, args)
-    
-    
+
+
     print('Done')
-    
-    
-    
-    
-        
-        
+
+
+
+
+
+
