@@ -5,7 +5,7 @@
 #SBATCH --mem-per-cpu=2GB
 #SBATCH --time=6:00:00
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=hsosik@whoi.edu
+#SBATCH --mail-user=dayang@whoi.edu
 #SBATCH --partition=compute
 #SBATCH --array=
 #SBATCH --output=slogs/video2tator/%A.%a.%x.txt
@@ -19,7 +19,7 @@ module load ffmpeg
 module load gcc/8.5.0
 module load python3/3.9.10
 source venv/bin/activate
-umask 000  # newly created files have all permissions ok. 
+umask 000  # newly created files have all permissions ok.
 PATH="$(realpath bin):$PATH"  # add bin/mp4dump to PATH
 echo "Environment... loaded"
 
@@ -34,19 +34,19 @@ VIDEO_FILE=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $VIDEOS_LIST)
 echo "TATOR-PY..."
 TOKEN=$(cat tator_token.txt)  # hpc-user access token
 HOST=https://tator.whoi.edu
-PROJ_ID=1   # ISIIS
-MEDIA_ID=1  # shadowgraph video
+PROJ_ID=2   # WARP fish detection
+MEDIA_TYPE=2  # 2 = CUREE videos, 3 = Diver Survey, 4 = Diver Images
 FOLDER="$(basename $VIDEO_FILE | cut -f2 -d'_')"
 
 time python3 -m tator.transcode "$VIDEO_FILE" \
     --host $HOST \
     --token $TOKEN \
     --project $PROJ_ID \
-    --type $MEDIA_ID \
+    --type $MEDIA_TYPE \
     --section "$FOLDER" \
-    --work_dir "tator_transcode_workspace" 
+    --work_dir "tator_transcode_workspace"
 
-echo 
+echo
 TZ=UTC0 printf '%(%H:%M:%S)T\n' $SECONDS
 
 sleep 10

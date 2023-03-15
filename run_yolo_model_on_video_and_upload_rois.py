@@ -23,12 +23,12 @@ def get_args():
     tator_args.add_argument('--host', default='https://tator.whoi.edu', help='Default is "https://tator.whoi.edu"')
     tator_args.add_argument('--token', required=True, help='Tator user-access token (required)')
     tator_args.add_argument('--project', default='2', help='Default is "2" for the WARP fish detection project')
-    #tator_args.add_argument('--media_type', default='1')  # shadowgraph video
-    tator_args.add_argument('--version_id', default='2', help='')  # which layer.
+    tator_args.add_argument('--media_type', type=int, required=True, help='2 = CUREE videos, 3 = Diver Survey, 4 = Diver Images')
+    tator_args.add_argument('--version_id', type=int, default=2, help='')  # which layer.
     tator_args.add_argument('--localization_type', default='2', help='Default is "2" for Animal BBox localization_type id')  # ROI
 
     tator_args.add_argument('--class-attribute', default='Class', help='Default is the localization_type "Class" attribute)')
-    tator_args.add_argument('--media_id', required=True, type=int, help='2 = CUREE videos, 3 = Diver Survey, 4 = Diver Images')
+    tator_args.add_argument('--media_id', type=int, help='[optional] tator media id reference')
 
     tator_args.add_argument('--frame-offset', type=int, default=0, help='Frame number offset. Eg: -1. Default is 0')
     tator_args.add_argument('--skip-title-frame', action='store_true', help='If invoked, the first frame of the video will be skipped')
@@ -71,11 +71,11 @@ def tator_args_str2id(args, api):
     project_name = {v:k for k,v in projects_avail.items()}[args.project]
 
     # MEDIA TYPE
-    #mediatypes_avail = {d.name:d.id for d in api.get_media_type_list(args.project)}
-    #pprint(mediatypes_avail)
-    #if args.media_type.isnumeric():
+    # mediatypes_avail = {d.name:d.id for d in api.get_media_type_list(args.project)}
+    # pprint(mediatypes_avail)
+    # if args.media_type.isnumeric():
     #    args.media_type = int(args.media_type)
-    #else:
+    # else:
     #    assert args.media_type in mediatypes_avail, f'Media Type "{args.media_type}" not in: {", ".join(mediatypes_avail)}'
     #    args.media_type = mediatypes_avail[args.media_type]
 
