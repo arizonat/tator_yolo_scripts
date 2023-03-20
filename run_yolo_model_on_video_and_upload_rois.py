@@ -19,6 +19,9 @@ def get_args():
     parser.add_argument('MEDIA', help='the data/video you want to process')
     parser.add_argument('MODEL', help='the yolo model (weights) to apply to MEDIA')
 
+    parser.add_argument('--cache_offline', action='store_true', help='if results should be cached locally')
+    parser.add_argument('--local_project', required=False, type=str, help='local project directory to use if caching offline')
+
     tator_args = parser.add_argument_group(title='Tator Parameters', description=None)
     tator_args.add_argument('--host', default='https://tator.whoi.edu', help='Default is "https://tator.whoi.edu"')
     tator_args.add_argument('--token', required=True, help='Tator user-access token (required)')
@@ -33,7 +36,7 @@ def get_args():
     tator_args.add_argument('--frame-offset', type=int, default=0, help='Frame number offset. Eg: -1. Default is 0')
     tator_args.add_argument('--skip-title-frame', action='store_true', help='If invoked, the first frame of the video will be skipped')
 
-    # from yolov5_ultralytics/detect.py
+    # from yolov5/detect.py
     model_args = parser.add_argument_group(title='Model Parameters', description=None)
     model_args.add_argument('--classlist', dest='model_classlist', required=True, help='A file with the ordered list of class names, newlines deliminated')
     model_args.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
@@ -117,12 +120,29 @@ def tator_args_str2id(args, api):
 
 
 def run_model(args):
-    from yolov5_ultralytics import detect
+    from yolov5 import detect
     #preds = detect.run('path/to/model_weights.pt', 'path/to/source.video', device='cuda', return_preds_only=True)
-    preds = detect.run(args.MODEL, args.MEDIA, return_preds_only=True,
-                       device=args.device, imgsz=args.imgsz, half=args.half,
-                       conf_thres=args.conf_thres, iou_thres=args.iou_thres,
-                       max_det=args.max_det, agnostic_nms=args.agnostic_nms, nosave=True)
+
+    if args.cache_offline:
+        return_preds_only = False
+        nosave = False
+        save_txt = True
+        save_conf = True
+        project = args.local_project
+    else:
+        return_preds_only = True
+        nosave = True
+        save_txt = False
+        save_conf = False
+        project = "yolov5/runs/detect" # relative path from this script to yolo directory + runs/detect is the default
+
+    preds = detect.run(
+        args.MODEL, args.MEDIA, return_preds_only=return_preds_only,
+        device=args.device, imgsz=args.imgsz, half=args.half,
+        conf_thres=args.conf_thres, iou_thres=args.iou_thres,
+        max_det=args.max_det, agnostic_nms=args.agnostic_nms,
+        project=project, nosave=nosave, save_txt=save_txt, save_conf=save_conf
+    )
 
     return preds
 
